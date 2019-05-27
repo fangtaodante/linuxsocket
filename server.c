@@ -14,7 +14,7 @@ int main(){
     int fd_listen,fd_connect;
     struct sockaddr_in serv_addr,clie_addr;
     socklen_t clie_addr_len;
-    char buf[BUFSIZ];
+    char buf[BUFSIZ],clie_IP[BUFSIZ];
     int n,i;
     fd_listen = socket(AF_INET,SOCK_STREAM,0);
     //创建一个socket描述符，成功返回文件描述符，失败返回 -1；
@@ -28,9 +28,13 @@ int main(){
     //指定监听上限数，同时允许多少客户端建立连接；
     printf("Accepting connections...\n");
     //while(1){
-        fd_connect = accept(fd_listen,(struct sockaddr*)&clie_addr, &clie_addr_len);
-        //刻在脑子里，接收连接请求，clie_addr:传出参数，addr_len:传入传出参数，返回一个新的文件描述符，用于通信
-        //阻塞等待客户端发起连接
+    clie_addr_len=sizeof(clie_addr);
+    fd_connect = accept(fd_listen,(struct sockaddr*)&clie_addr, &clie_addr_len);
+    //刻在脑子里，接收连接请求，clie_addr:传出参数，addr_len:传入传出参数，返回一个新的文件描述符，用于通信
+    //阻塞等待客户端发起连接
+    printf("Client IP:%s, Port:%d\n",
+        inet_ntop(AF_INET,&clie_addr.sin_addr.s_addr,clie_IP,sizeof(clie_IP)),
+        ntohs(clie_addr.sin_port));
     while(1){
         n = read(fd_connect, buf,sizeof(buf));
         for(i = 0;i<n;i++){
