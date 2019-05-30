@@ -12,7 +12,7 @@
 #include "wrap.h"
 
 #define SERV_IP "127.0.0.1"
-#define SERV_PORT 9699
+#define SERV_PORT 1214
 
 void wait_child(int signo){
     while(waitpid(0, NULL, WNOHANG)>0)

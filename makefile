@@ -14,3 +14,4 @@ client: client.o wrap.o
 .PHONY:clean all
 clean:
 	-rm -rf server $(obj)
+	-rm -rf client $(obj)
