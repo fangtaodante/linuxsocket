@@ -9,8 +9,8 @@
 #include <ctype.h>//toupper
 #include "wrap.h"
 
-#define SER_ADDR "127.0.0.1"
-#define SER_PORT 9699
+#define SER_ADDR "107.174.66.19"
+#define SER_PORT 1214
 
 int main(){
     int fd_connect;
