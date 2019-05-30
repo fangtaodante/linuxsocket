@@ -8,6 +8,14 @@ void perr_exit(const char *s){
     exit(1);
 }
 
+pid_t Fork(){
+    pid_t n;
+    if((n=fork())<0){
+        perr_exit("Fock error");
+    }
+    return n;
+}
+
 int Socket(int family, int type,int protocol){
     int n;
     if((n=socket(family,type,protocol))<0){

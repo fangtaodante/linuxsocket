@@ -6,11 +6,18 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>//sockert_addr_in
 #include <ctype.h>//toupper
+#include <sys/wait.h>
+#include <signal.h>
 
 #include "wrap.h"
 
 #define SERV_IP "127.0.0.1"
 #define SERV_PORT 9699
+
+void wait_child(int signo){
+    while(waitpid(0, NULL, WNOHANG)>0)
+    return;
+}
 
 int main(){
     int fd_listen,fd_connect;
@@ -18,6 +25,7 @@ int main(){
     socklen_t clie_addr_len;
     char buf[BUFSIZ],clie_IP[BUFSIZ];
     int n,i;
+    pid_t pid;
     fd_listen = Socket(AF_INET,SOCK_STREAM,0);
     //创建一个socket描述符，成功返回文件描述符，失败返回 -1；
     bzero(&serv_addr,sizeof(serv_addr));
@@ -30,22 +38,40 @@ int main(){
     Listen(fd_listen,128);
     //指定监听上限数，同时允许多少客户端建立连接；
     printf("Accepting connections...\n");
-    //while(1){
-    clie_addr_len=sizeof(clie_addr);
-    fd_connect = Accept(fd_listen,(struct sockaddr*)&clie_addr, &clie_addr_len);
-    //刻在脑子里，接收连接请求，clie_addr:传出参数，addr_len:传入传出参数，返回一个新的文件描述符，用于通信
-    //阻塞等待客户端发起连接
-    printf("Client IP:%s, Port:%d\n",
-        inet_ntop(AF_INET,&clie_addr.sin_addr.s_addr,clie_IP,sizeof(clie_IP)),
-        ntohs(clie_addr.sin_port));
+
+    //建立多进程服务器,父进程不断循环创建子进程
     while(1){
-        n = Read(fd_connect, buf,sizeof(buf));
-        for(i = 0;i<n;i++){
-            buf[i]=toupper(buf[i]);
+        clie_addr_len=sizeof(clie_addr);
+        fd_connect = Accept(fd_listen,(struct sockaddr*)&clie_addr, &clie_addr_len);
+        //刻在脑子里，接收连接请求，clie_addr:传出参数，addr_len:传入传出参数，返回一个新的文件描述符，用于通信
+        //阻塞等待客户端发起连接
+        printf("Client IP:%s, Port:%d\n",inet_ntop(AF_INET, &clie_addr.sin_addr.s_addr,clie_IP,sizeof(clie_IP)),
+        ntohs(clie_addr.sin_port));
+        pid = Fork();
+        if(pid == 0){//子进程
+            close(fd_listen);
+            break;
+        } else {
+            close(fd_connect);
+            signal(SIGCHLD,wait_child);
         }
-        Write(fd_connect,buf,n);
     }
-    close(fd_listen);
-    close(fd_connect);
-    return 0;
+    if(pid==0){//子进程
+        while(1){
+            n = Read(fd_connect,buf,sizeof(buf));
+            if(n==0){
+                close(fd_connect);
+                return 0;
+            }else if(n==-1){
+                perror("Read error");
+                exit(1);
+            }else{
+                for(i=0;i<n;i++)
+                buf[i]=toupper(buf[i]);
+                Write(fd_connect,buf,n);
+                Write(STDOUT_FILENO,buf,n);
+            }
+        }
+    }
+
 }
